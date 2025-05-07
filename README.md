@@ -99,6 +99,7 @@ int main() {
                                   │  Connection Pool Queue                  │
                                   │                                         │
                                   └─────────────────────────────────────────┘
+```
 
 ## Building and Installation
 
