@@ -1,4 +1,4 @@
 class Connection {
     public:
     private:
-}
+};
