@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -g -Wall -std=c++17
-INCLUDES = -I/usr/include -I/usr/include/cppconn
+INCLUDES = -I/usr/include -I/usr/include/cppconn -I./include
 LDFLAGS = -L/usr/lib/x86_64-linux-gnu
 LDLIBS = -lmysqlcppconn
 
