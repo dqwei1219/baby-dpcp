@@ -5,7 +5,7 @@
 #include <algorithm>
 
 ConnectionPool::ConnectionPool() {
-    if (!loadConfig("mysql.config")) {
+    if (!loadConfig("tests/mysql.config")) {
         throw std::runtime_error("Failed to load connection pool config");
     }
     initialize();
@@ -26,6 +26,7 @@ bool ConnectionPool::loadConfig(const std::string& filename) {
     std::string line;
     
     while (std::getline(file, line)) {
+        std::cout << line << std::endl;
         // Skip comments and empty lines
         if (line.empty() || line[0] == '#' || line[0] == ';') {
             continue;
@@ -45,6 +46,7 @@ bool ConnectionPool::loadConfig(const std::string& filename) {
             configMap[key] = value;
         }
     }
+    std::cout << std::endl;
 
     // Parse configuration with defaults
     auto getConfig = [&](const std::string& key, const std::string& defaultValue = "") {
@@ -54,10 +56,10 @@ bool ConnectionPool::loadConfig(const std::string& filename) {
 
     _config.host = getConfig("host", "localhost");
     _config.port = static_cast<uint16_t>(std::stoi(getConfig("port", "3306")));
-    _config.database = getConfig("database");
-    _config.username = getConfig("username");
+    _config.database = getConfig("dbname");
+    _config.username = getConfig("user");
     _config.password = getConfig("password");
-    _config.minSize = std::stoul(getConfig("minSize", "5"));
+    _config.minSize = std::stoul(getConfig("initSize", "5"));
     _config.maxSize = std::stoul(getConfig("maxSize", "20"));
     _config.maxIdleTime = std::chrono::seconds(std::stoi(getConfig("maxIdleTime", "60")));
     _config.connectionTimeout = std::chrono::milliseconds(std::stoi(getConfig("connectionTimeout", "5000")));
@@ -92,8 +94,8 @@ void ConnectionPool::initialize() {
     }
 
     // Start background threads
-    _producer = std::thread(&ConnectionPool::producerThread, this);
-    _sweeper = std::thread(&ConnectionPool::sweeperThread, this);
+    _producer = std::thread(std::bind(&ConnectionPool::producerThread, this));
+    _sweeper = std::thread(std::bind(&ConnectionPool::sweeperThread, this));
 
     LOG("Connection pool initialized with " + std::to_string(_config.minSize) + " connections");
 }
@@ -158,9 +160,12 @@ std::shared_ptr<Connection> ConnectionPool::getConnection() {
     _availableConnections.pop();
     
     // Validate connection
-    conn = createConnection();
-    if (!conn) {
-        return nullptr;
+    if (!conn->isConnected()) {
+        // Only create new one if the pooled one is dead
+        conn = createConnection();
+        if (!conn) {
+            return nullptr;
+        }
     }
     
     _activeConnections++;

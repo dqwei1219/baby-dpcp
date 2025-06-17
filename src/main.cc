@@ -1,35 +1,41 @@
 #include <iostream>
 #include <chrono>
-#include <mysql_connection.h>
-#include <mysql_driver.h>
-#include <cppconn/driver.h>
-#include <cppconn/exception.h>
-#include <cppconn/resultset.h>
-#include <cppconn/statement.h>
-#include "Connection.h"
+#include "CommonConnectionPool.h"
 
 int main() {
-    std::string host = "localhost";
-    unsigned short port = 3306;
-    std::string user = "testuser";
-    std::string password = "Test@1234";
-    std::string database = "testdb";
-
-    auto begin = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 1000; ++i) {
-        Connection db_conn;
-        if(!db_conn.connect(host, port, user, password, database)) {
-            std::cout << "Connection failed" << std::endl;
-            return 1;
+    std::cout << "Testing WITH Connection Pool\n";
+    std::cout << "===========================\n\n";
+    
+    try {
+        ConnectionPool& pool = ConnectionPool::getConnectionPool();
+        
+        auto start = std::chrono::high_resolution_clock::now();
+        
+        int successCount = 0;
+        for (int i = 0; i < 1000; ++i) {
+            auto conn = pool.getConnection();
+            if (!conn) {
+                std::cout << "Failed to get connection at iteration " << i << std::endl;
+                continue;
+            }
+            
+            std::string sqlQuery = "INSERT INTO user(name, age, sex) VALUES('wang', 25, 'female')";
+            if (conn->update(sqlQuery)) {
+                successCount++;
+            }
         }
-        // Create connection
-        std::string sqlQuery = "INSERT INTO user(name, age, sex) VALUES('zhang', 20, 'male')";
-        db_conn.update(sqlQuery);
+        
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration<double, std::milli>(end - start);
+        
+        std::cout << "Successful operations: " << successCount << "/1000\n";
+        std::cout << "Total time: " << duration.count() << " ms\n";
+        std::cout << "Average per operation: " << duration.count() / 1000 << " ms\n";
+        
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
     }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto totalDuration = std::chrono::duration<double, std::milli>(end - begin);
-    std::cout << totalDuration.count() << "ms" << std::endl;
-
+    
     return 0;
 }
