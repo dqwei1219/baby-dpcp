@@ -83,6 +83,8 @@ bool Connection::update(std::string sql) {
                     " (Error code: " + std::to_string(e.getErrorCode()) + ")");
         return false;
     }
+
+    return true;
 }
 
 std::unique_ptr<sql::ResultSet> Connection::query(std::string sql) {

@@ -13,7 +13,7 @@
 class ConnectionPool
 {
     public:
-        static ConnectionPool& getInstance() {
+        static ConnectionPool& getConnectionPool() {
             static ConnectionPool instance;
             return instance;
         }

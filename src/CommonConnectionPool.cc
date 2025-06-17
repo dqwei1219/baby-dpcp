@@ -81,7 +81,7 @@ void ConnectionPool::initialize() {
     std::lock_guard<std::mutex> lock(_mu);
     
     // Create initial connections
-    for (size_t i = 0; i < _config.minSize; ++i) {
+    for (int i = 0; i < _config.minSize; ++i) {
         auto conn = createConnection();
         if (conn) {
             _availableConnections.push(std::move(conn));
@@ -188,8 +188,8 @@ void ConnectionPool::producerThread() {
         // Wait if we have enough connections
         _notFull.wait(lock, [this] {
             return _shutdown|| 
-                   (_availableConnections.size() + _activeConnections <= _config.maxSize &&
-                    _availableConnections.size() < _config.minSize);
+                   (static_cast<int>(_availableConnections.size()) + _activeConnections <= _config.maxSize &&
+                    static_cast<int>(_availableConnections.size()) < _config.minSize);
         });
         
         if (_shutdown) break;
@@ -215,7 +215,7 @@ void ConnectionPool::sweeperThread() {
         if (_shutdown) break;
         
         // Don't sweep below minimum size
-        while (_availableConnections.size() > _config.minSize) {
+        while (static_cast<int>(_availableConnections.size()) > _config.minSize) {
             auto& conn = _availableConnections.front();
             
             if (conn->getAliveTime() > _config.maxIdleTime) {

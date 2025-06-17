@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 #include <mysql_connection.h>
 #include <mysql_driver.h>
 #include <cppconn/driver.h>
@@ -8,29 +9,27 @@
 #include "Connection.h"
 
 int main() {
-    Connection db_conn;
-    try {
-        std::cout << "Getting driver instance..." << std::endl;
-        std::cout << "Driver instance obtained!" << std::endl;
-        
-        std::cout << "Connecting to MySQL..." << std::endl;
-        std::string host = "localhost";
-        unsigned short port = 3306;
-        std::string user = "testuser";
-        std::string password = "Test@1234";
-        std::string database = "testdb";
+    std::string host = "localhost";
+    unsigned short port = 3306;
+    std::string user = "testuser";
+    std::string password = "Test@1234";
+    std::string database = "testdb";
+
+    auto begin = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < 1000; ++i) {
+        Connection db_conn;
         if(!db_conn.connect(host, port, user, password, database)) {
             std::cout << "Connection failed" << std::endl;
             return 1;
         }
-        std::cout << "Connected!" << std::endl;
-        
-    } catch (sql::SQLException &e) {
-        std::cout << "ERROR: " << e.what() << std::endl;
-        std::cout << "MySQL error code: " << e.getErrorCode() << std::endl;
-    } catch (std::exception &e) {
-        std::cout << "Exception: " << e.what() << std::endl;
+        // Create connection
+        std::string sqlQuery = "INSERT INTO user(name, age, sex) VALUES('zhang', 20, 'male')";
+        db_conn.update(sqlQuery);
     }
-    std::cout << "Done." << std::endl;
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto totalDuration = std::chrono::duration<double, std::milli>(end - begin);
+    std::cout << totalDuration.count() << "ms" << std::endl;
+
     return 0;
 }
