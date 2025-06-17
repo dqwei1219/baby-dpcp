@@ -7,41 +7,61 @@
 #include <atomic>
 #include <memory>
 #include <functional>
+#include <condition_variable>
+#include <thread>
 
 class ConnectionPool
 {
     public:
-        static ConnectionPool* getConnectionPool();
+        static ConnectionPool& getInstance() {
+            static ConnectionPool instance;
+            return instance;
+        }
+
+        // Delete Copy and Move
+        ConnectionPool(const ConnectionPool&) = delete;
+        ConnectionPool& operator=(const ConnectionPool&) = delete;
+        ConnectionPool(ConnectionPool&&) = delete;
+        ConnectionPool& operator=(ConnectionPool&&) = delete;
+
         // get an available connection;
         std::shared_ptr<Connection> getConnection();
 
     private:
         ConnectionPool(); // Singleton
-        bool loadConfig();
-        void produceConnection();
+        ~ConnectionPool();
+        bool loadConfig(const std::string& filename);
+        void producerThread();
+        void sweeperThread(); // Restore connection when exceed max idle time
+        void initialize();
+        void shutdown();
+        std::unique_ptr<Connection> createConnection();
 
+        // Configuration
+        struct Config {
+            std::string host{"localhost"};
+            uint16_t port{3306};
+            std::string database;
+            std::string username;
+            std::string password;
+            int minSize{5};
+            int maxSize{20};
+            std::chrono::seconds maxIdleTime{60};
+            std::chrono::milliseconds connectionTimeout{5000};
+        };
 
-        std::string _ip;
-        unsigned short _port;
-        std::string _dbname;
-        std::string _username;
-        std::string _password;
+        Config _config;
+        mutable std::mutex _mu;
+        std::thread _producer;
+        std::thread _sweeper;
+        std::queue<std::unique_ptr<Connection>> _availableConnections;
+        std::atomic<int> _activeConnections{0};
+        std::atomic<bool> _shutdown{false};
+        std::condition_variable _notEmpty;
+        std::condition_variable _notFull;
+        
+        // Statistics
+        std::atomic<int> _totalRequests{0};
+        std::atomic<int> _timeoutCount{0};
 
-        int _initSize;
-        int _maxSize;
-        int _maxIdleTime;
-        int _connectionTimeout;
-        std::queue<Connection*> _connectionQ;
-        std::mutex _qMutex;
-        std::unordered_map<std::string, std::string> _config;
-        std::atomic_int _connectionCnt;
-        std::condition_variable cv;
-
-        std::string get(std::string key, std::string defaultValue="") const {
-            auto it = _config.find(key);
-            if (it != _config.end()) {
-                return it->second;
-            }
-            return defaultValue;
-        }
 };
