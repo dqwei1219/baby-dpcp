@@ -62,7 +62,10 @@ $(BIN_DIR):
 .PHONY: all clean test
 
 # --- Default Target ---
-all: $(SERVER_EXE)
+all: $(SERVER_EXE) $(TEST_WITH_POOL_EXE) $(TEST_WITHOUT_POOL_EXE)
+
+run: $(SERVER_EXE)
+	cd $(BIN_DIR) && ./server
 
 tests: $(TEST_WITH_POOL_EXE) $(TEST_WITHOUT_POOL_EXE)
 
