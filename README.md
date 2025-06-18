@@ -49,27 +49,7 @@ The project consists of two main components:
 2. **`Connection.cpp`**: Provides the SQL CRUD (Create, Read, Update, Delete) operation interfaces
 
 ## Usage Example
-
-```cpp
-#include "ConnectionPool.h"
-
-int main() {
-    // Initialize the connection pool
-    ConnectionPool* pool = ConnectionPool::getInstance();
-    pool->init("localhost", 3306, "username", "password", "dbname", 5, 20, 100, 1000);
-    
-    // Get a connection from the pool
-    Connection* conn = pool->getConnection();
-    
-    // Use the connection for database operations
-    conn->update("UPDATE users SET status = 1 WHERE id = 100");
-    
-    // Return the connection to the pool
-    pool->releaseConnection(conn);
-    
-    return 0;
-}
-```
+See tests/ and client_examples/
 
 # DBCP System Architecture Diagram
 ```
