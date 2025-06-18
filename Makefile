@@ -1,69 +1,71 @@
+# --- Compiler and Flags --- 
 CXX = g++
 CXXFLAGS = -g -Wall -O3 -std=c++17
-INCLUDES = -I/usr/include -I/usr/include/cppconn -I./include
+INCLUDES = -I/usr/include -I/usr/include/cppconn -I./include -I./include/external
 LDFLAGS = -L/usr/lib/x86_64-linux-gnu
 LDLIBS = -lmysqlcppconn
 
-# Directories
-SRC_DIR = ./src
-TEST_DIR = ./tests
-BUILD_DIR = ./build
-BIN_DIR = ./bin
+# --- Directories ---
+SRC_DIR = src
+TEST_DIR = tests
+BUILD_DIR = build
+BIN_DIR = bin
+SERVER_DIR = server
 
-# Source files
-SRCS = $(wildcard $(SRC_DIR)/*.cc)
-OBJS = $(patsubst $(SRC_DIR)/%.cc,$(BUILD_DIR)/%.o,$(SRCS))
+# --- Target Executable --- 
+SERVER_EXE = $(BIN_DIR)/server
+TEST_WITH_POOL_EXE = $(BIN_DIR)/test_with_pool
+TEST_WITHOUT_POOL_EXE = $(BIN_DIR)/test_without_pool
 
-# Specific object files we need
-CONNECTION_OBJ = $(BUILD_DIR)/Connection.o
-POOL_OBJ = $(BUILD_DIR)/CommonConnectionPool.o
+# --- Source Files ---
+SRC_FILES = $(wildcard $(SRC_DIR)/*.cc)
+SERVER_FILES = $(wildcard $(SERVER_DIR)/*.cc)
+TEST_FILES = $(wildcard $(TEST_DIR)/*.cc)
 
-# Targets
-TARGET = $(BIN_DIR)/baby-dbcp
-TEST_WITHOUT_POOL = $(BIN_DIR)/test_without_pool
-TEST_WITH_POOL = $(BIN_DIR)/test_with_pool
+# --- Object Files --- 
+SRC_OBJS = $(patsubst $(SRC_DIR)/%.cc,$(BUILD_DIR)/%.o,$(SRC_FILES))
+SERVER_OBJS = $(patsubst $(SERVER_DIR)/%.cc,$(BUILD_DIR)/%.o,$(SERVER_FILES))
+TEST_OBJS = $(patsubst $(TEST_DIR)/%.cc, $(BUILD_DIR)/%.o,$(TEST_FILES))
 
-# Default target
-all: $(TARGET)
 
-# Main program
-$(TARGET): $(OBJS) | $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
-# Build any object file
+# --- Rule to build .o from src/ and server/ and tests/ ---
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cc | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-# Test without pool (only needs Connection.o)
-$(TEST_WITHOUT_POOL): $(TEST_DIR)/test_without_pool.cc $(CONNECTION_OBJ) | $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+$(BUILD_DIR)/%.o: $(SERVER_DIR)/%.cc | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-# Test with pool (needs both objects)
-$(TEST_WITH_POOL): $(TEST_DIR)/test_with_pool.cc $(CONNECTION_OBJ) $(POOL_OBJ) | $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+# Build object files from tests
+$(BUILD_DIR)/%.o: $(TEST_DIR)/%.cc | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
+# --- Rule to build the server ---
+$(SERVER_EXE): $(SRC_OBJS) $(SERVER_OBJS) | $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+# --- Rule to build the test 1 ---
+$(TEST_WITH_POOL_EXE): $(SRC_OBJS) $(BUILD_DIR)/test_with_pool.o | $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+# --- Rule to build the test 2 ---
+$(TEST_WITHOUT_POOL_EXE): $(SRC_OBJS) $(BUILD_DIR)/test_without_pool.o | $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+# --- Create folders if needed --- 
 $(BUILD_DIR):
-	@mkdir -p $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)
 
 $(BIN_DIR):
-	@mkdir -p $(BIN_DIR)
+	mkdir -p $(BIN_DIR)
 
 # Phony targets
-.PHONY: all clean test run run-tests
+.PHONY: all clean test
 
-# Build all tests
-test: $(TEST_WITHOUT_POOL) $(TEST_WITH_POOL)
+# --- Default Target ---
+all: $(SERVER_EXE)
 
-# Run main program
-run: $(TARGET)
-	./$(TARGET)
+tests: $(TEST_WITH_POOL_EXE) $(TEST_WITHOUT_POOL_EXE)
 
-# Run all tests
-run-tests: test
-	@./$(TEST_WITHOUT_POOL)
-	@./$(TEST_WITH_POOL)
-
-# Clean everything
 clean:
 	rm -rf $(BUILD_DIR) $(BIN_DIR)
 
@@ -71,7 +73,6 @@ clean:
 help:
 	@echo "Usage:"
 	@echo "  make              - Build main program"
-	@echo "  make test         - Build test programs"
 	@echo "  make run          - Run main program"
-	@echo "  make run-tests    - Build and run all tests"
+	@echo "  make tests        - Build test programs"
 	@echo "  make clean        - Remove all build files"

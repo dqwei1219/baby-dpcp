@@ -26,6 +26,14 @@ class ConnectionPool
 
         // get an available connection;
         std::shared_ptr<Connection> getConnection();
+        struct Stats {
+            size_t totalConnections;
+            size_t availableConnections;
+            size_t activeConnections;
+            uint64_t totalRequests;
+            uint64_t timeoutCount;
+        };
+        Stats getStats() const;
 
     private:
         ConnectionPool(); // Singleton

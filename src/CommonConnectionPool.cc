@@ -5,7 +5,7 @@
 #include <algorithm>
 
 ConnectionPool::ConnectionPool() {
-    if (!loadConfig("tests/mysql.config")) {
+    if (!loadConfig("/etc/baby-dbcp/mysql.config")) {
         throw std::runtime_error("Failed to load connection pool config");
     }
     initialize();
@@ -232,4 +232,15 @@ void ConnectionPool::sweeperThread() {
             }
         }
     }
+}
+
+ConnectionPool::Stats ConnectionPool::getStats() const {
+    std::lock_guard<std::mutex> lock(_mu);
+    return {
+        _availableConnections.size() + _activeConnections,
+        _availableConnections.size(),
+        _activeConnections,
+        _totalRequests,
+        _timeoutCount
+    };
 }
