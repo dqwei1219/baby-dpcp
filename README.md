@@ -122,9 +122,14 @@ make test
 make install
 ```
 
-## Performance Considerations and Testing
-Waiting...
+## Connection Pool Performance Benchmark
 
+For 1000 sql queries
+
+| Mode                   |  Total Time (ms) | Avg Time per Operation (ms) | Speedup |
+|------------------------|------------------|------------------------------|---------|
+| With Connection Pool   | 2027.78          | 2.03                         | 8.8×    |
+| Without Connection Pool| 17849.8          | 17.85                        | 1×      |
 
 ## Dependencies
 ```bash
