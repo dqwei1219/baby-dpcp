@@ -81,25 +81,19 @@ See tests/ and client_examples/
                                   └─────────────────────────────────────────┘
 ```
 
-## Building and Installation
+## Building
 
 ```bash
 # Clone the repository
 git clone https://github.com/dqwei1219/baby-dpcp 
 cd baby-dbcp
 
-# Create build directory
-mkdir build && cd build
-
-# Configure and build
-cmake ..
+# build server
 make
 
-# Run tests
-make test
+# Build tests
+make tests
 
-# Install library
-make install
 ```
 
 ## Connection Pool Performance Benchmark
