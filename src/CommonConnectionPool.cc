@@ -94,8 +94,8 @@ void ConnectionPool::initialize() {
     }
 
     // Start background threads
-    _producer = std::thread(std::bind(&ConnectionPool::producerThread, this));
-    _sweeper = std::thread(std::bind(&ConnectionPool::sweeperThread, this));
+    _producer = std::thread(&ConnectionPool::producerThread, this);
+    _sweeper = std::thread(&ConnectionPool::sweeperThread, this);
 
     LOG("Connection pool initialized with " + std::to_string(_config.minSize) + " connections");
 }
